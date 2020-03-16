@@ -33,30 +33,27 @@ export function isAdmin () {
   return store.idToken && getPreferredRole().includes('-CognitoAdminRole-')
 }
 
-let logoutTimer
-
-function getRemainingSessionTime (idToken) {
-  return jwtDecode(idToken).exp * 1000 - Date.now()
-}
-
 export function init () {
   initApiGatewayClient() // init a blank client (will get overwritten if we have creds)
 
   // attempt to refresh credentials from active session
 
   let idToken
-  let diff = 0
+  let parsedToken
+  let valid = false
 
   try {
     idToken = window.localStorage.getItem(cognitoUserPoolId)
-    if (idToken) diff = getRemainingSessionTime(idToken)
+    if (idToken) { // this `if` prevents console.error spam
+      parsedToken = jwtDecode(idToken)
+      valid = parsedToken.exp * 1000 > new Date()
+    }
   } catch (error) {
     console.error(error)
   }
 
-  if (diff > 0) {
+  if (valid) {
     store.idToken = idToken
-    logoutTimer = setTimeout(logout, diff)
     setCredentials()
   } else {
     logout()
@@ -85,8 +82,6 @@ export function login () {
         window.localStorage.setItem(cognitoUserPoolId, idToken)
 
         store.idToken = idToken
-
-        logoutTimer = setTimeout(logout, getRemainingSessionTime(idToken))
 
         setCredentials()
 
@@ -133,8 +128,6 @@ function setCredentials () {
 }
 
 export function logout () {
-  clearTimeout(logoutTimer)
-  logoutTimer = undefined
   if (store.idToken) {
     store.resetUserData()
     window.localStorage.clear()

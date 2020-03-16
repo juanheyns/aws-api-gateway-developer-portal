@@ -13,7 +13,7 @@ import { isAuthenticated } from 'services/self'
 import { GetSdkButton } from 'components/GetSdk'
 
 // state
-import { observer, Observer } from 'mobx-react'
+import { observer } from 'mobx-react'
 import { store } from 'services/state.js'
 
 // Create the plugin that provides our layout component
@@ -22,15 +22,13 @@ export const SwaggerLayoutPlugin = () => ({ components: { InfoContainer: InfoRep
 // replaces the InfoContainer component
 // https://github.com/swagger-api/swagger-ui/blob/dd3afdc45656bda2a64ae6a7f9bdad006ea98149/src/core/components/layouts/base.jsx
 
-// Note: this is called not as a component, but as a function within a class component. Do
-// *not* make this a component, and do *not* use hooks or anything similar in it.
-function InfoReplacement ({ specSelectors }) {
+const InfoReplacement = observer(({ specSelectors }) => {
   const basePath = specSelectors.basePath()
   const host = specSelectors.host()
   const externalDocs = specSelectors.externalDocs()
 
-  return <Observer>
-    {() => <Container fluid textAlign='left' className='fixfloat' style={{ padding: '40px 0px' }}>
+  return (
+    <Container fluid textAlign='left' className='fixfloat' style={{ padding: '40px 0px' }}>
       <div style={{ display: 'flex' }}>
         <div style={{ flex: '0 0 auto', marginRight: '20px' }}>
           <Image size='small' src={store.api.logo} />
@@ -64,9 +62,9 @@ function InfoReplacement ({ specSelectors }) {
           {store.api.sdkGeneration && <GetSdkButton />}
         </div>
       </div>
-    </Container>}
-  </Observer>
-}
+    </Container>
+  )
+})
 
 const SubscriptionButtons = observer(class SubscriptionButtons extends React.Component {
   render () {
@@ -78,7 +76,7 @@ const SubscriptionButtons = observer(class SubscriptionButtons extends React.Com
         ) : (
           <Button onClick={() => subscribe(api.usagePlan.id)}>Subscribe</Button>
         )
-      ) : <Header as='h4' color='grey'>This version of the API is not configured to be subscribable from the portal. Please contact the Admin for more details.</Header> : null
+      ) : <Header as='h4' color='grey'>This API is not configured for subscription from the portal.</Header> : null
     )
   }
 })

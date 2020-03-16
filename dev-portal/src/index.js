@@ -58,11 +58,6 @@ export const AdminRoute = ({ component: Component, ...rest }) => (
   />
 )
 
-// To shut up a dev warning
-const HomeWrap = props => <Home {...props} />
-const GettingStartedWrap = props => <GettingStarted {...props} />
-const DashboardWrap = props => <Dashboard {...props} />
-
 class App extends React.Component {
   constructor () {
     super()
@@ -83,7 +78,7 @@ class App extends React.Component {
           <NavBar />
           <GlobalModal />
           <Switch>
-            <Route exact path='/' component={HomeWrap} />
+            <Route exact path='/' component={Home} />
             <Route
               exact
               path='/index.html'
@@ -97,8 +92,8 @@ class App extends React.Component {
                 return <Redirect to='/' />
               }}
             />
-            <Route path='/getting-started' component={GettingStartedWrap} />
-            <RegisteredRoute path='/dashboard' component={DashboardWrap} />
+            <Route path='/getting-started' component={GettingStarted} />
+            <RegisteredRoute path='/dashboard' component={Dashboard} />
             <AdminRoute path='/admin' component={Admin} />
             <Route exact path='/apis' component={Apis} />
             <Route exact path='/apis/search' component={ApiSearch} />

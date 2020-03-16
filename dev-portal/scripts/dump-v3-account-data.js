@@ -1,8 +1,6 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-'use strict'
-
 // Calls the DumpV3AccountDataFn lambda, and writes its JSON string output into
 // a file.
 

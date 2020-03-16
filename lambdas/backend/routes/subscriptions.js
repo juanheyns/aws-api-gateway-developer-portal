@@ -3,56 +3,76 @@
 const customersController = require('dev-portal-common/customers-controller')
 const util = require('../util')
 
-exports.get = async (req, res) => {
+exports.get = (req, res) => {
   const cognitoIdentityId = util.getCognitoIdentityId(req)
   console.log(`GET /subscriptions for Cognito ID: ${cognitoIdentityId}`)
 
-  const data = await new Promise((resolve, reject) => {
-    customersController.getUsagePlansForCustomer(cognitoIdentityId, reject, resolve)
-  })
+  function errFunc (data) {
+    console.log(`error: ${data}`)
+    res.status(500).json(data)
+  }
 
-  res.status(200).json(data.items)
+  customersController.getUsagePlansForCustomer(cognitoIdentityId, errFunc, (data) => {
+    res.status(200).json(data.items)
+  })
 }
 
-exports.put = async (req, res) => {
+exports.put = (req, res) => {
   const cognitoIdentityId = util.getCognitoIdentityId(req)
   console.log(`PUT /subscriptions for Cognito ID: ${cognitoIdentityId}`)
   const usagePlanId = req.params.usagePlanId
 
-  const catalog = await util.catalog()
-  const catalogUsagePlan = util.getUsagePlanFromCatalog(usagePlanId, catalog)
-  // const apiGatewayUsagePlan = await apigateway.getUsagePlan({ usagePlanId }).promise()
-  console.log(`catalogUsagePlan: ${JSON.stringify(catalogUsagePlan, null, 2)}`)
+  util.catalog()
+    .then(catalog => util.getUsagePlanFromCatalog(usagePlanId, catalog))
+    .then(async (catalogUsagePlan) => {
+      const isUsagePlanInCatalog = Boolean(catalogUsagePlan)
+      // const apiGatewayUsagePlan = await apigateway.getUsagePlan({ usagePlanId }).promise()
 
-  // the usage plan doesn't exist
-  if (!catalogUsagePlan) {
-    res.status(404).json({ error: 'Invalid Usage Plan ID' })
-    // the usage plan exists, but 0 of its apis are visible
-  } else if (!catalogUsagePlan.apis.length) {
-    res.status(404).json({ error: 'Invalid Usage Plan ID' })
-    // allow subscription if (the usage plan exists, at least 1 of its apis are visible)
-  } else {
-    const data = await new Promise((resolve, reject) => {
-      customersController.subscribe(cognitoIdentityId, usagePlanId, reject, resolve)
+      function error (data) {
+        console.log(`error: ${data}`)
+        res.status(500).json(data)
+      }
+
+      function success (data) {
+        res.status(201).json(data)
+      }
+
+      // the usage plan doesn't exist
+      if (!isUsagePlanInCatalog) {
+        res.status(404).json({ error: 'Invalid Usage Plan ID' })
+        // the usage plan exists, but 0 of its apis are visible
+      } else if (!catalogUsagePlan.apis.length) {
+        res.status(404).json({ error: 'Invalid Usage Plan ID' })
+        // allow subscription if (the usage plan exists, at least 1 of its apis are visible)
+      } else {
+        customersController.subscribe(cognitoIdentityId, usagePlanId, error, success)
+      }
     })
-    res.status(201).json(data)
-  }
 }
 
-exports.delete = async (req, res) => {
+exports.delete = (req, res) => {
   const cognitoIdentityId = util.getCognitoIdentityId(req)
   console.log(`DELETE /subscriptions for Cognito ID: ${cognitoIdentityId}`)
   const usagePlanId = req.params.usagePlanId
 
-  const catalog = await util.catalog()
-  const usagePlan = util.getUsagePlanFromCatalog(usagePlanId, catalog)
+  function error (data) {
+    console.log(`error: ${data}`)
+    res.status(500).json(data)
+  }
 
-  if (!usagePlan || !usagePlan.apis.length) {
-    res.status(404).json({ error: 'Invalid Usage Plan ID' })
-  } else {
-    const data = await new Promise((resolve, reject) => {
-      customersController.unsubscribe(cognitoIdentityId, usagePlanId, reject, resolve)
-    })
+  function success (data) {
     res.status(200).json(data)
   }
+
+  util.catalog()
+    .then(catalog => util.getUsagePlanFromCatalog(usagePlanId, catalog))
+    .then((usagePlan) => {
+      const isUsagePlanInCatalog = Boolean(usagePlan)
+
+      if (!isUsagePlanInCatalog) {
+        res.status(404).json({ error: 'Invalid Usage Plan ID' })
+      } else {
+        customersController.unsubscribe(cognitoIdentityId, usagePlanId, error, success)
+      }
+    })
 }
