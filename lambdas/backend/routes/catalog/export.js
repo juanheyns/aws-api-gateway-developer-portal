@@ -32,9 +32,6 @@ exports.get = async (req, res) => {
       parameters
     }).promise()).body
 
-    const datauri = new Datauri()
-    datauri.format('.zip', resultsBuffer)
-
-    res.send(datauri.content)
+    res.send(resultsBuffer)
   }
 }
